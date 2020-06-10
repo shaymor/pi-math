@@ -41,12 +41,11 @@ class Paint(object):
         self.digit1Label = Label(self.root, text = "", font=("Courier", 16))
         self.digit1Label.grid(row = 2, column = 0)
         self.symbolLabel = Label(self.root, text = "", font=("Courier", 16))
-        self.symbolLabel.grid(row = 2, column = 2)
+        self.symbolLabel.grid(row = 2, column = 2, sticky = E)
         self.digit2Label = Label(self.root, text = "", font=("Courier", 16))
         self.digit2Label.grid(row = 2, column = 4)
-        Label(self.root, text = "", font = ("Courier", 14)).grid(row = 3, column = 2)
-        self.equation = Label(self.root, text = "", font=("Courier", 16))
-        self.equation.grid(row = 3, column = 2)
+        self.equation = Label(self.root, text = "", font=("Courier", 20), foreground = 'red')
+        self.equation.grid(row = 3, column = 0, columnspan = 5)
 
         self.setup()
         self.root.mainloop()
@@ -169,7 +168,7 @@ class Paint(object):
         # Get overall confidence
         confidence = d1_confidence * s_confidence * d2_confidence
 
-        # Perform the operation
+        # # Perform the operation
         if s == "+":
             self.equation["text"] = "%d + %d = %d with overall %.2f%% confidence!" % (d1, d2, d1 + d2, confidence * 100)
         elif s == "-":
@@ -180,7 +179,6 @@ class Paint(object):
             self.equation["text"] = "%d / %d = %.2f with overall %.2f%% confidence!" % (d1, d2, d1 / d2, confidence * 100)
         elif s == "=":
             self.equation["text"] = "%d = %d with overall %.2f%% confidence! Your equation is %r!" % (d1, d2, confidence * 100, d1 == d2)
-        print()
         
 
 
