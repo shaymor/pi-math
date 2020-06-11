@@ -17,9 +17,13 @@ class Paint(object):
     def __init__(self):
         self.root = Tk()
         self.root.geometry("875x425+283+275")
+        
+        self.boxVariable1 = BooleanVar()
+        self.boxVariable2 = BooleanVar()
 
         self.digit_model = keras.models.load_model("models/digit_model")
         self.symbol_model = keras.models.load_model('models/operator_model')
+        self.letter_model = keras.models.load_model("models/letter_model")
 
         pencil = ImageTk.PhotoImage(Image.open ("buttons/pencil.png"))
         self.pen_button = Button(self.root, image = pencil, command=self.use_pen)
@@ -35,17 +39,28 @@ class Paint(object):
         self.clear_button = Button(self.root, text='clear', command = self.clear)
         self.clear_button.grid(row = 0, column = 3)
 
+        self.idk = Checkbutton(self.root, text = 'variable', variable = self.boxVariable1)
+        self.idk.grid(row = 1, column = 0, sticky = S)
+        self.idk2 = Checkbutton(self.root, text = 'variable', variable = self.boxVariable2)
+        self.idk2.grid(row = 1, column = 4, sticky = S)
+
         self.c = Canvas(self.root, bg='white', width=842, height=282, highlightthickness = 1, highlightbackground = "black")
-        self.c.grid(row=1, columnspan=5, padx = 10, pady = 10)
+        self.c.grid(row=2, columnspan=5, padx = 10, pady = 10)
 
         self.digit1Label = Label(self.root, text = "", font=("Courier", 16))
-        self.digit1Label.grid(row = 2, column = 0)
+        self.digit1Label.grid(row = 3, column = 0, columnspan = 2)
         self.symbolLabel = Label(self.root, text = "", font=("Courier", 16))
-        self.symbolLabel.grid(row = 2, column = 2, sticky = E)
+        self.symbolLabel.grid(row = 3, column = 2, sticky = W, columnspan = 2)
         self.digit2Label = Label(self.root, text = "", font=("Courier", 16))
-        self.digit2Label.grid(row = 2, column = 4)
+        self.digit2Label.grid(row = 3, column = 4, columnspan = 2)
         self.equation = Label(self.root, text = "", font=("Courier", 20), foreground = 'red')
-        self.equation.grid(row = 3, column = 0, columnspan = 5)
+        self.equation.grid(row = 4, column = 0, columnspan = 5)
+
+
+        self.symbols = ["+", "-", "/", "*", "="]
+        self.digits = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']
+        self.letters = ['a', 'b', 'c', 'd']
+        self.values = [0, 0, 0, 0]
 
         self.setup()
         self.root.mainloop()
@@ -87,6 +102,10 @@ class Paint(object):
         self.c.delete("all")
         self.c.create_line(280, 0, 280, 281)
         self.c.create_line(562, 0, 562, 281)
+        self.digit1Label["text"] = ""
+        self.symbolLabel["text"] = ""
+        self.digit2Label["text"] = ""
+        self.equation["text"] = ""
 
     def paint(self, event):
         self.line_width = 10
@@ -105,8 +124,8 @@ class Paint(object):
 
     def getter(self):
         widget = self.c
-        x11=self.root.winfo_x() + 303
-        y11=self.root.winfo_y() + 423
+        x11=self.root.winfo_x() + 304
+        y11=self.root.winfo_y() + 475
         x12=x11+ 560
         y12=y11+ 560
         ImageGrab.grab().crop((x11,y11,x12,y12)).save("process/digit1.png")
@@ -140,16 +159,26 @@ class Paint(object):
         return im
     
     def main(self):
-        # Labels
-        symbols = ["+", "-", "/", "*", "="]
-        digits = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']
+        self.isVariable1 = self.boxVariable1.get()
+        self.isVariable2 = self.boxVariable2.get()
 
-        # First digit
+        values = self.values
+        letters = self.letters
+        digits = self.digits
+        symbols = self.symbols
+
+        # First digit / letter
         digit1 = self.read_image("process/digit1.png")
-        dPrediction1 = self.digit_model.predict(digit1)
-        d1 = dPrediction1.argmax()
-        d1_confidence = dPrediction1[0][dPrediction1.argmax()]
-        self.digit1Label["text"] = "%d with %.2f%% confidence!" % (d1, d1_confidence * 100)
+        if self.isVariable1:
+            dPrediction1 = self.letter_model.predict(digit1)
+            d1 = dPrediction1.argmax()
+            d1_confidence = dPrediction1[0][dPrediction1.argmax()]
+            self.digit1Label["text"] = "%s with %.2f%% confidence!" % (letters[d1], d1_confidence * 100)
+        else:
+            dPrediction1 = self.digit_model.predict(digit1)
+            d1 = dPrediction1.argmax()
+            d1_confidence = dPrediction1[0][dPrediction1.argmax()]
+            self.digit1Label["text"] = "%s with %.2f%% confidence!" % (digits[d1], d1_confidence * 100)
 
         # Symbol
         symbol = self.read_image("process/symbol.png")
@@ -159,26 +188,59 @@ class Paint(object):
         self.symbolLabel["text"] = "%s with %.2f%% confidence!" % (s, s_confidence * 100)
 
         # Second digit
-        digit2 = self.read_image("process/digit2.png")
-        dPrediction2 = self.digit_model.predict(digit2)
-        d2 = dPrediction2.argmax()
-        d2_confidence = dPrediction2[0][dPrediction2.argmax()]
-        self.digit2Label["text"] = "%d with %.2f%% confidence!" % (d2, d2_confidence * 100)
+        if self.isVariable2:
+            digit2 = self.read_image("process/digit2.png")
+            dPrediction2 = self.letter_model.predict(digit2)
+            d2 = dPrediction2.argmax()
+            d2_confidence = dPrediction2[0][dPrediction2.argmax()]
+            self.digit2Label["text"] = "%s with %.2f%% confidence!" % (letters[d2], d2_confidence * 100)
+        else:
+            digit2 = self.read_image("process/digit2.png")
+            dPrediction2 = self.digit_model.predict(digit2)
+            d2 = dPrediction2.argmax()
+            d2_confidence = dPrediction2[0][dPrediction2.argmax()]
+            self.digit2Label["text"] = "%s with %.2f%% confidence!" % (digits[d2], d2_confidence * 100)
 
         # Get overall confidence
         confidence = d1_confidence * s_confidence * d2_confidence
 
         # # Perform the operation
         if s == "+":
-            self.equation["text"] = "%d + %d = %d with overall %.2f%% confidence!" % (d1, d2, d1 + d2, confidence * 100)
+            first = values[d1] if self.isVariable1 else d1
+            second = values[d2] if self.isVariable2 else d2
+            values[0] = first + second
+            self.equation["text"] = "%d + %d = %d with overall %.2f%% confidence!" % (first, second, first + second, confidence * 100)
         elif s == "-":
-            self.equation["text"] = "%d - %d = %d with overall %.2f%% confidence!" % (d1, d2, d1 - d2, confidence * 100)
+            first = values[d1] if self.isVariable1 else d1
+            second = values[d2] if self.isVariable2 else d2
+            values[0] = first - second
+            self.equation["text"] = "%d - %d = %d with overall %.2f%% confidence!" % (first, second, first - second, confidence * 100)
         elif s == "*":
-            self.equation["text"] = "%d * %d = %d with overall %.2f%% confidence!" % (d1, d2, d1 * d2, confidence * 100)
+            first = values[d1] if self.isVariable1 else d1
+            second = values[d2] if self.isVariable2 else d2
+            values[0] = first * second
+            self.equation["text"] = "%d * %d = %d with overall %.2f%% confidence!" % (first, second, first * second, confidence * 100)
         elif s == "/":
-            self.equation["text"] = "%d / %d = %.2f with overall %.2f%% confidence!" % (d1, d2, d1 / d2, confidence * 100)
+            first = values[d1] if self.isVariable1 else d1
+            second = values[d2] if self.isVariable2 else d2
+            values[0] = first / second
+            self.equation["text"] = "%d / %d = %.2f with overall %.2f%% confidence!" % (first, second, first / second, confidence * 100)
         elif s == "=":
-            self.equation["text"] = "%d = %d with overall %.2f%% confidence! Your equation is %r!" % (d1, d2, confidence * 100, d1 == d2)
+            if self.isVariable1 and self.isVariable2:
+                values[d1] = values[d2]
+                self.equation["text"] = "%s = %s with overall %.2f%% confidence! %s is now equal to %s (%d)!" % (letters[d1], letters[d2], confidence * 100, letters[d1], letters[d2], values[d2])
+            elif self.isVariable1 and not self.isVariable2:
+                values[d1] = d2
+                self.equation["text"] = "%s = %d with overall %.2f%% confidence! %s is now equal to %d!" % (letters[d1], d2, confidence * 100, letters[d1], d2)
+            elif not self.isVariable1 and self.isVariable2:
+                self.equation["text"] = "%d = %s (%d) with overall %.2f%% confidence! Your equation is %r!" % (d1, letters[d2], values[d2], confidence * 100, d1 == values[d2])
+            else:
+                self.equation["text"] = "%d = %d with overall %.2f%% confidence! Your equation is %r!" % (d1, d2, confidence * 100, d1 == d2)
+        
+        self.symbols = symbols
+        self.digits = digits
+        self.values = values
+        self.letters = letters
         
 
 
