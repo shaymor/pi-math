@@ -17,6 +17,7 @@ class Paint(object):
     def __init__(self):
         self.root = Tk()
         self.root.geometry("875x425+283+275")
+        self.root.resizable(width=False, height=False)
         
         self.boxVariable1 = BooleanVar()
         self.boxVariable2 = BooleanVar()
@@ -223,8 +224,12 @@ class Paint(object):
         elif s == "/":
             first = values[d1] if self.isVariable1 else d1
             second = values[d2] if self.isVariable2 else d2
-            values[0] = first / second
-            self.equation["text"] = "%d / %d = %.2f with overall %.2f%% confidence!" % (first, second, first / second, confidence * 100)
+            if second != 0:
+                values[0] = first / second
+                self.equation["text"] = "%d / %d = %.2f with overall %.2f%% confidence!" % (first, second, first / second, confidence * 100)
+            else:
+                self.equation["text"] = "%d / %d with overall %.2f%% confidence! Don't divide by zero!" % (first, second, confidence * 100)
+
         elif s == "=":
             if self.isVariable1 and self.isVariable2:
                 values[d1] = values[d2]
