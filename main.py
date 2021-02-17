@@ -1,13 +1,13 @@
 from tkinter import *
 from tkinter.colorchooser import askcolor
 from PIL import ImageTk, Image, ImageGrab
+from pyscreenshot import grab
 import imageio
 import numpy as np
-from matplotlib import pyplot as plt
-import tensorflow.compat.v2 as tf
-import tensorflow_datasets as tfds
 from tensorflow import keras
 import tensorflow
+
+print("Setting up!")
 
 class Paint(object):
 
@@ -48,13 +48,13 @@ class Paint(object):
         self.c = Canvas(self.root, bg='white', width=842, height=282, highlightthickness = 1, highlightbackground = "black")
         self.c.grid(row=2, columnspan=5, padx = 10, pady = 10)
 
-        self.digit1Label = Label(self.root, text = "", font=("Courier", 16))
+        self.digit1Label = Label(self.root, text = "", font=("Courier", 12))
         self.digit1Label.grid(row = 3, column = 0, columnspan = 2)
-        self.symbolLabel = Label(self.root, text = "", font=("Courier", 16))
-        self.symbolLabel.grid(row = 3, column = 2, sticky = W, columnspan = 2)
-        self.digit2Label = Label(self.root, text = "", font=("Courier", 16))
+        self.symbolLabel = Label(self.root, text = "", font=("Courier", 12))
+        self.symbolLabel.grid(row = 3, column = 2, sticky = W, columnspan = 3)
+        self.digit2Label = Label(self.root, text = "", font=("Courier", 12))
         self.digit2Label.grid(row = 3, column = 4, columnspan = 2)
-        self.equation = Label(self.root, text = "", font=("Courier", 20), foreground = 'red')
+        self.equation = Label(self.root, text = "", font=("Courier", 16), foreground = 'red')
         self.equation.grid(row = 4, column = 0, columnspan = 5)
 
 
@@ -103,10 +103,10 @@ class Paint(object):
         self.c.delete("all")
         self.c.create_line(280, 0, 280, 281)
         self.c.create_line(562, 0, 562, 281)
-        self.digit1Label["text"] = ""
-        self.symbolLabel["text"] = ""
-        self.digit2Label["text"] = ""
-        self.equation["text"] = ""
+        self.digit1Label["text"] = "                          "
+        self.symbolLabel["text"] = "                          "
+        self.digit2Label["text"] = "                          "
+        self.equation["text"] = "                             "
 
     def paint(self, event):
         self.line_width = 10
@@ -125,23 +125,20 @@ class Paint(object):
 
     def getter(self):
         widget = self.c
-        x11=self.root.winfo_x() + 304
-        y11=self.root.winfo_y() + 475
-        x12=x11+ 560
-        y12=y11+ 560
-        ImageGrab.grab().crop((x11,y11,x12,y12)).save("process/digit1.png")
+        x11=self.root.winfo_x() + 10
+        y1=self.root.winfo_y() + 100
+        x12 = x11 + 280
+        y2 = y1 + 280
+        ImageGrab.grab().crop((x11, y1, x12, y2)).save("process/digit1.png")
 
-        x21=x12 + 2
-        y21=y11
-        x22=x21 + 560
-        y22=y21 + 560
-        ImageGrab.grab().crop((x21,y21,x22,y22)).save("process/symbol.png")
+        x21 = x12 + 1
+        x22 = x21 + 280
+        ImageGrab.grab().crop((x21, y1, x22, y2)).save("process/symbol.png")
 
-        x31=x22 + 2
-        y31=y21
-        x32=x31 + 560
-        y32=y31 + 560
-        ImageGrab.grab().crop((x31,y31,x32,y32)).save("process/digit2.png")
+        x31 = x22 + 1
+        x32 = x31 + 280
+        ImageGrab.grab().crop((x31, y1, x32, y2)).save("process/digit2.png")
+
         self.main()
 
     def read_image(self, path):
@@ -151,10 +148,6 @@ class Paint(object):
         im = imageio.imread(path)
         # Turn the image into grayscale
         im = np.dot(im[...,:3], [0.299, 0.587, 0.114])
-        # # Display the image to the user
-        # plt.imshow(im, cmap = plt.get_cmap('gray'))
-        # plt.show()
-        # Reshape and normalize the image so that the model can "read" it
         im = im.reshape(1, 28, 28, 1)
         im /= 255
         return im
@@ -180,6 +173,8 @@ class Paint(object):
             d1 = dPrediction1.argmax()
             d1_confidence = dPrediction1[0][dPrediction1.argmax()]
             self.digit1Label["text"] = "%s with %.2f%% confidence!" % (digits[d1], d1_confidence * 100)
+
+        print(dPrediction1)
 
         # Symbol
         symbol = self.read_image("process/symbol.png")
@@ -241,6 +236,7 @@ class Paint(object):
                 self.equation["text"] = "%d = %s (%d) with overall %.2f%% confidence! Your equation is %r!" % (d1, letters[d2], values[d2], confidence * 100, d1 == values[d2])
             else:
                 self.equation["text"] = "%d = %d with overall %.2f%% confidence! Your equation is %r!" % (d1, d2, confidence * 100, d1 == d2)
+
         
         self.symbols = symbols
         self.digits = digits
@@ -250,4 +246,4 @@ class Paint(object):
 
 
 if __name__ == '__main__':
-    Paint() 
+    Paint()
